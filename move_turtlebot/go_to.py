@@ -28,6 +28,7 @@ class MoveToPoz(Node):
         self.g_p.pose.pose.orientation.z = 0.0
         self.distance_tolerance = 0.1
         self.angular_tolerance = 0.1
+        self.I_value = 0.0
 
         # Initialize a timer that excutes call back function in desired frequency
         self.timer = self.create_timer(timer_period, self.move2goal)
@@ -46,10 +47,10 @@ class MoveToPoz(Node):
         return float(sqrt(pow((goal_pose.pose.pose.position.x - self.pose.pose.pose.position.x), 2) +
                     pow((goal_pose.pose.pose.position.y - self.pose.pose.pose.position.y), 2)))
 
-    def linear_vel(self, goal_pose, constant=0.2):
+    def linear_vel(self, goal_pose, constant_P=0.2, constant_I = 0.01):
         #Proportional controler for lin. velocity controll
         #velocity = constant * self.euclidean_distance(goal_pose)
-        velocity = self.P_controler(self.euclidean_distance(goal_pose), constant)
+        velocity = self.PI_controller(self.euclidean_distance(goal_pose), constant_P, constant_I)
         if velocity > 0.4:
             velocity = 0.4
         elif velocity < -0.4:
@@ -60,23 +61,41 @@ class MoveToPoz(Node):
         #Angle of the path from robot location to destination.
         return atan2(goal_pose.pose.pose.position.y - self.pose.pose.pose.position.y, goal_pose.pose.pose.position.x - self.pose.pose.pose.position.x)
 
-    def angular_vel(self, goal_pose, constant=1):
+    def angular_vel(self, goal_pose, constant_P=1, constant_I=0.1):
         #Proportional controler to align robot to the direction of the destination.
         #omega = constant * (self.steering_angle(goal_pose) - self.pose.pose.pose.orientation.z)
-        omega = self.P_controler((self.steering_angle(goal_pose) - self.pose.pose.pose.orientation.z), constant)
+        omega = self.PI_controller((self.steering_angle(goal_pose) - self.pose.pose.pose.orientation.z), constant_P, constant_I)
         if omega > 0.5:
             omega = 0.5
         elif omega < -0.5:
             omega = -0.5
         return omega
-        
-    def P_controler(self, delta, gain):
-        P_value = gain * delta
-        return P_value
 
     def angular_difference(self, goal_pose):
         delta = self.pose.pose.pose.orientation.z - goal_pose.pose.pose.orientation.z
         return delta
+
+    ############contoler_stuff#################
+
+    def P_controller(self, delta, gain):
+        P_value = gain * delta
+        return P_value
+
+    def PI_controller(self, Delta, gain_P, gain_I):
+        self.I_value = self.I_value + Delta * gain_I
+        if self.I_value > 0.3:
+            self.I_value = 0.3
+        elif self.I_value < -0.3:
+            self.I_value = -0.3
+
+        use_I_controler = True #if set to true PI controler wil be used insted of just P
+
+        if use_I_controler:
+            return self.I_value + self.P_controller(Delta, gain_P)
+        else:
+            return self.P_controller(Delta, gain_P)
+
+    ##########################################
 
     def move2goal(self):
         #Moves the turtle to the goal        

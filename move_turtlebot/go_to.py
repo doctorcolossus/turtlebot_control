@@ -21,10 +21,11 @@ class MoveToPoz(Node):
 
         timer_period = 0.1  # seconds
         self.state = 0 # if movement in progress, eaquals to 1
+        self.init_theta = "y"
         self.g_p = Odometry()
         self.g_p.pose.pose.position.x = 0.0
         self.g_p.pose.pose.position.y = 0.0
-        self.g_p.pose.pose.orientation.z = 0
+        self.g_p.pose.pose.orientation.z = 0.0
         self.distance_tolerance = 0.1
         self.angular_tolerance = 0.1
 
@@ -79,8 +80,8 @@ class MoveToPoz(Node):
             # Get the input from the user.
             self.g_p.pose.pose.position.x = float(input("Set your x goal: "))
             self.g_p.pose.pose.position.y = float(input("Set your y goal: "))
-            init_theta = input("Is theta a requirement y/n?: ")
-            if init_theta == "y":
+            self.init_theta = input("Is theta a requirement y/n?: ")
+            if self.init_theta == "y":
                 self.g_p.pose.pose.orientation.z = float(input("Set your theta goal: "))
                 self.angular_tolerance = float(input("Set your angular tolerance: "))
 
@@ -116,7 +117,7 @@ class MoveToPoz(Node):
                 vel_msg.linear.x = 0.0
                 vel_msg.angular.z = 0.0
                 self.velocity_publisher.publish(vel_msg)
-                if init_theta == "y":
+                if self.init_theta == "y":
                     self.state = 2
                 else:
                     self.state = 0

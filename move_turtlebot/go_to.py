@@ -48,7 +48,8 @@ class MoveToPoz(Node):
 
     def linear_vel(self, goal_pose, constant=0.2):
         #Proportional controler for lin. velocity controll
-        velocity = constant * self.euclidean_distance(goal_pose)
+        #velocity = constant * self.euclidean_distance(goal_pose)
+        velocity = self.P_controler(self.euclidean_distance(goal_pose), constant)
         if velocity > 0.4:
             velocity = 0.4
         elif velocity < -0.4:
@@ -61,12 +62,17 @@ class MoveToPoz(Node):
 
     def angular_vel(self, goal_pose, constant=1):
         #Proportional controler to align robot to the direction of the destination.
-        omega = constant * (self.steering_angle(goal_pose) - self.pose.pose.pose.orientation.z)
+        #omega = constant * (self.steering_angle(goal_pose) - self.pose.pose.pose.orientation.z)
+        omega = self.P_controler((self.steering_angle(goal_pose) - self.pose.pose.pose.orientation.z), constant)
         if omega > 0.5:
             omega = 0.5
         elif omega < -0.5:
             omega = -0.5
         return omega
+        
+    def P_controler(self, delta, gain):
+        P_value = gain * delta
+        return P_value
 
     def angular_difference(self, goal_pose):
         delta = self.pose.pose.pose.orientation.z - goal_pose.pose.pose.orientation.z

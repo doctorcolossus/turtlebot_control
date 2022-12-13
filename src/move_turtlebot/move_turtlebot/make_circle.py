@@ -21,10 +21,11 @@ class MoveToPoz(Node):
 
         timer_period = 0.1  # seconds
         self.state = 0
-        self.d = 3.0
+        self.r = 1.6 # defines radiuss of the circular path
         self.x = 0.0
-        self.y = 1.6
+        self.y = 1.6 # positions the path so that robot initial position is on the path
         self.v = 0.1
+        self.p = 1.0 # proportional controler (P controler) gain
 
         # Initialize a timer that excutes call back function every x seconds
         self.timer = self.create_timer(timer_period, self.move2goal)
@@ -38,10 +39,10 @@ class MoveToPoz(Node):
         self.pose.pose.pose.position.x = round(self.pose.pose.pose.position.x, 4)
         self.pose.pose.pose.position.y = round(self.pose.pose.pose.position.y, 4)
     
-    def angular_vel(self, constant=0.5):
-        distance = sqrt(pow(self.pose.pose.pose.position.x - self.x,2)+pow(self.pose.pose.pose.position.y - self.y,2))-self.d       
+    def angular_vel(self):
+        distance = sqrt(pow(self.pose.pose.pose.position.x - self.x,2)+pow(self.pose.pose.pose.position.y - self.y,2))-self.r      
         self.get_logger().info('Distance: "%s"' % distance)        
-        omega = constant * distance
+        omega = self.p * distance
         if omega > 0.3:
             omega = 0.3
         elif omega < -0.3:
@@ -52,10 +53,12 @@ class MoveToPoz(Node):
 
         if self.state == 0:
             # Get the input from the user.
-            self.d = float(input("Set circle diameter: "))
-            self.x = float(input("Set circle x position: "))
-            self.y = float(input("Set circle y position: "))
-            self.v = float(input("Set robot linear velocity: "))            
+            self.r = float(input("Set circle radiuss: "))
+            self.y = self.r
+            #self.x = float(input("Set circle x position: ")) #posibility to change path center point
+            #self.y = float(input("Set circle y position: "))
+            self.v = float(input("Set robot linear velocity: "))
+            self.p = float(input("Set P controler gain: "))            
             self.state = 1   
 
         vel_msg = Twist()
@@ -69,7 +72,7 @@ class MoveToPoz(Node):
             # Angular velocity in the z-axis.
             vel_msg.angular.x = 0.0
             vel_msg.angular.y = 0.0
-            vel_msg.angular.z = self.angular_vel
+            vel_msg.angular.z = self.angular_vel()
 
             # Publishing our vel_msg
             self.velocity_publisher.publish(vel_msg)                           

@@ -15,7 +15,7 @@ class MoveToPoz(Node):
 
         # Publisher which will publish to the topic '/cmd_vel'.
         self.velocity_publisher = self.create_publisher(Twist, '/cmd_vel', 10)
-        
+
         # A subscriber to the topic '/pose' with a calback to 'update_pose'
         self.pose_subscriber = self.create_subscription(Odometry, '/odom', self.update_pose, 10)
 

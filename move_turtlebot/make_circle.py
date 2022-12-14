@@ -4,6 +4,8 @@ import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
+from std_msgs.msg import Float32
+from std_msgs.msg import Int16
 from math import pow, sqrt
 
 
@@ -14,6 +16,11 @@ class MoveToPoz(Node):
 
         # Publisher which will publish to the topic '/cmd_vel'.        
         self.velocity_publisher = self.create_publisher(Twist, '/cmd_vel', 10)
+        # Publish distance from robot to closest point on desired circiular path
+        self.error_publisher = self.create_publisher(Float32, '/robot_info/error', 10)
+        # Publish the state of robot 0 - not mowing and wiating for destination input; 1 - moving to x, y;
+        # 2 - rotating to destination theta
+        self.state_publisher = self.create_publisher(Int16, '/robot_info/state', 10)
         
         # A subscriber to the topic '/turtle1/pose'. self.update_pose is called
         # when a message of type Odometry is received.        
@@ -41,7 +48,10 @@ class MoveToPoz(Node):
     
     def angular_vel(self):
         distance = sqrt(pow(self.pose.pose.pose.position.x - self.x,2)+pow(self.pose.pose.pose.position.y - self.y,2))-self.r      
-        self.get_logger().info('Distance: "%s"' % distance)        
+        distance_msg = Float32()
+        distance_msg.data = distance
+        self.error_publisher.publish(distance_msg)
+
         omega = self.p * distance
         if omega > 0.3:
             omega = 0.3
@@ -50,6 +60,9 @@ class MoveToPoz(Node):
         return omega
 
     def move2goal(self):
+        state_msg = Int16()
+        state_msg.data = self.state
+        self.state_publisher.publish(state_msg)
 
         if self.state == 0:
             # Get the input from the user.

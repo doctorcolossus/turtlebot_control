@@ -171,9 +171,9 @@ class MoveTo(Node):
             if (   self.angular_difference() >  self.angular_tolerance
                 or self.angular_difference() < -self.angular_tolerance):
 
-               message.angular.z = 0.5 * self.angular_difference()
+                message.angular.z = 0.5 * self.angular_difference()
 
-               self.velocity_publisher.publish(message)
+                self.velocity_publisher.publish(message)
 
             else:
                 message.angular.z = 0.0

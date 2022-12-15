@@ -176,7 +176,7 @@ class MoveTo(Node):
                 if arguments.orientation:
                     self.state = "rotation"
                 else:
-                    self.state = "idle"
+                    exit()
 
         if self.state == "rotation":
 
@@ -192,7 +192,7 @@ class MoveTo(Node):
             else:
                 message.angular.z = 0.0
                 self.velocity_publisher.publish(message)
-                self.state = "idle"
+                exit()
 
 def main(args=None):
 

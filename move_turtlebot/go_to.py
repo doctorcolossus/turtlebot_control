@@ -70,16 +70,16 @@ class MoveTo(Node):
         self.pose.pose.pose.position.x = round(self.pose.pose.pose.position.x, 4)
         self.pose.pose.pose.position.y = round(self.pose.pose.pose.position.y, 4)
 
-    def euclidean_distance(self, goal_pose):
+    def euclidean_distance(self):
         """returns distance between current pose and goal"""
 
-        return float(sqrt(pow((goal_pose.pose.pose.position.x - self.pose.pose.pose.position.x), 2) +
-                    pow((goal_pose.pose.pose.position.y - self.pose.pose.pose.position.y), 2)))
+        return float(sqrt(pow((self.goal.pose.pose.position.x - self.pose.pose.pose.position.x), 2) +
+                    pow((self.goal.pose.pose.position.y - self.pose.pose.pose.position.y), 2)))
 
-    def linear_velocity(self, goal_pose, constant_P = 0.2, constant_I = 0.01):
+    def linear_velocity(self, constant_P = 0.2, constant_I = 0.01):
         """proportional controller for linear velocity control"""
 
-        velocity = self.PI_controller(self.euclidean_distance(goal_pose),
+        velocity = self.PI_controller(self.euclidean_distance(),
                                       constant_P,
                                       constant_I)
 
@@ -88,19 +88,19 @@ class MoveTo(Node):
 
         return velocity
 
-    def steering_angle(self, goal_pose):
+    def steering_angle(self):
         """returns angle of path from robot location to destination"""
 
-        return atan2((goal_pose.pose.pose.position.y
+        return atan2((self.goal.pose.pose.position.y
                       - self.pose.pose.pose.position.y),
-                     (goal_pose.pose.pose.position.x
+                     (self.goal.pose.pose.position.x
                       - self.pose.pose.pose.position.x))
 
-    def angular_vel(self, goal_pose, constant_P=1, constant_I=0.1):
+    def angular_velocity(self, constant_P=1, constant_I=0.1):
         """proportional controller to orient robot toward destination"""
 
         omega = \
-            self.PI_controller(delta = (self.steering_angle(goal_pose)
+            self.PI_controller(delta = (self.steering_angle()
                                         - self.pose.pose.pose.orientation.z),
                                gain_P = constant_P,
                                gain_I = constant_I)
@@ -110,10 +110,10 @@ class MoveTo(Node):
 
         return omega
 
-    def angular_difference(self, goal_pose):
+    def angular_difference(self):
 
         delta = (self.pose.pose.pose.orientation.z
-                 - goal_pose.pose.pose.orientation.z)
+                 - self.goal.pose.pose.orientation.z)
 
         return delta
 
@@ -135,35 +135,23 @@ class MoveTo(Node):
 
     def move_to_position(self):
 
-        goal_pose = Odometry()
-
         if self.state == "idle":
-
-            if arguments.orientation:
-                self.goal.pose.pose.orientation.z = arguments.orientation
-                self.angular_tolerance = arguments.angular_tolerance
-
-            self.distance_tolerance = arguments.distance_tolerance
-
             self.state = "translation"
-
-        goal_pose.pose.pose.position.x    = self.goal.pose.pose.position.x
-        goal_pose.pose.pose.position.y    = self.goal.pose.pose.position.y
-        goal_pose.pose.pose.orientation.z = self.goal.pose.pose.orientation.z
 
         message = Twist()
 
         if self.state == "translation":
 
-            if self.euclidean_distance(goal_pose) >= self.distance_tolerance:               
+            if (self.euclidean_distance()
+                >= self.distance_tolerance):
 
-                message.linear.x = self.linear_velocity(goal_pose)
+                message.linear.x = self.linear_velocity()
                 message.linear.y = 0.0
                 message.linear.z = 0.0
 
                 message.angular.x = 0.0
                 message.angular.y = 0.0
-                message.angular.z = self.angular_vel(goal_pose)
+                message.angular.z = self.angular_velocity()
 
                 self.velocity_publisher.publish(message)
 
@@ -180,12 +168,10 @@ class MoveTo(Node):
 
         if self.state == "rotation":
 
-            if (   (self.angular_difference(goal_pose)
-                    > self.angular_tolerance)
-                or (self.angular_difference(goal_pose)
-                    < -1 * self.angular_tolerance)):
+            if (   self.angular_difference() >  self.angular_tolerance
+                or self.angular_difference() < -self.angular_tolerance):
 
-               message.angular.z = 0.5 * self.angular_difference(goal_pose)
+               message.angular.z = 0.5 * self.angular_difference()
 
                self.velocity_publisher.publish(message)
 

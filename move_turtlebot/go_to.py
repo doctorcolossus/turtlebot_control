@@ -67,14 +67,21 @@ class MoveTo(Node):
         """called when new Odometry message Odometry received by subscriber"""
 
         self.pose = data
-        self.pose.pose.pose.position.x = round(self.pose.pose.pose.position.x, 4)
-        self.pose.pose.pose.position.y = round(self.pose.pose.pose.position.y, 4)
+
+        self.pose.pose.pose.position.x = \
+            round(self.pose.pose.pose.position.x, 4)
+
+        self.pose.pose.pose.position.y = \
+            round(self.pose.pose.pose.position.y, 4)
 
     def euclidean_distance(self):
         """returns distance between current pose and goal"""
 
-        return float(sqrt(pow((self.goal.pose.pose.position.x - self.pose.pose.pose.position.x), 2) +
-                    pow((self.goal.pose.pose.position.y - self.pose.pose.pose.position.y), 2)))
+        return \
+            float(sqrt(  pow((self.goal.pose.pose.position.x
+                              - self.pose.pose.pose.position.x), 2)
+                       + pow((self.goal.pose.pose.position.y
+                              - self.pose.pose.pose.position.y), 2)))
 
     def linear_velocity(self, constant_P = 0.2, constant_I = 0.01):
         """proportional controller for linear velocity control"""
